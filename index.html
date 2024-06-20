@@ -1,0 +1,268 @@
+
+<!--
+    Eduardo Steffens Hoppen - 198272
+    Leonardo Cologneze Dias - 178873
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Vendas Online</title>
+</head>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin-bottom: 20px;
+  }
+  label, input {
+    display: block;
+    margin-bottom: 10px;
+  }
+  button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .resultado {
+    width: 100%;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
+
+  .resultado div{
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+  }
+
+  #button-container{
+    display: flex;
+    align-items: end;
+  }
+</style>
+
+<body>
+    <h1>Sistema de Vendas Online</h1>
+
+    <form id="formulario">
+        <h2>Cadastrar Cliente</h2>
+        <label for="nomeCliente">Nome:</label>
+        <input type="text" id="nomeCliente" required>
+        <label for="emailCliente">Email:</label>
+        <input type="email" id="emailCliente" required>
+        <button type="submit">Cadastrar Cliente</button>
+    </form>
+
+    <form id="formularioProduto">
+        <h2>Cadastrar Produto</h2>
+        <label for="nomeProduto">Nome:</label>
+        <input type="text" id="nomeProduto" required>
+        <label for="precoProduto">Preço:</label>
+        <input type="number" id="precoProduto" step="0.01" min="0" required>
+        <label for="tipoProduto">Tipo:</label>
+        <select id="tipoProduto" required>
+            <option value="">Nenhum</option>
+            <option value="fisico">Produto Físico</option>
+            <option value="digital">Produto Digital</option>
+        </select>
+        <div id="containerPeso" style="display: none;">
+            <label id="labelPeso" for="pesoProduto">Peso (kg):</label>
+            <input type="number" id="pesoProduto" step="0.01" min="0">
+        </div>
+        <div id="containerTamanho" style="display: none;">
+            <label id="labelTamanho" for="tamanhoProduto">Tamanho (MB):</label>
+            <input type="number" id="tamanhoProduto" step="0.01" min="0">
+        </div>
+        <button type="submit">Cadastrar Produto</button>
+    </form>
+
+    <div id="resultado" class="resultado">
+        <div>
+          <h2>Resultado do Pedido</h2>
+          <p id="infoCliente"></p>
+          <ul id="listaProdutos"></ul>
+          <p id="totalPedido"></p>
+        </div>
+        <div id="button-container">
+          <button id="criarPedido">Criar Pedido</button>
+        </div>
+    </div>
+  </body>
+
+    <script>
+        class Produto {
+            constructor(nome, preco) {
+                this.nome = nome;
+                this.preco = preco;
+            }
+
+            getPreco() {
+                return this.preco;
+            }
+        }
+
+        class ProdutoFisico extends Produto {
+            constructor(nome, preco, peso) {
+                super(nome, preco);
+                this.peso = peso;
+            }
+
+            calcularFrete() {
+                return this.peso * 0.1;
+            }
+
+            getPreco() {
+                return super.getPreco() + this.calcularFrete();
+            }
+        }
+
+        class ProdutoDigital extends Produto {
+            constructor(nome, preco, tamanho) {
+                super(nome, preco);
+                this.tamanho = tamanho;
+            }
+
+            getTamanho() {
+                return this.tamanho;
+            }
+        }
+
+        class Cliente {
+            constructor(nome, email) {
+                this.nome = nome;
+                this.email = email;
+            }
+        }
+
+        class Pedido {
+            constructor(cliente) {
+                this.cliente = cliente;
+                this.produtos = [];
+            }
+
+            adicionarProduto(produto) {
+                this.produtos.push(produto);
+            }
+
+            calcularTotal() {
+                let total = 0;
+                this.produtos.forEach((produto) => {
+                    total += produto.getPreco();
+                });
+                return total;
+            }
+        }
+
+        const formularioCliente = document.getElementById('formulario');
+        const nomeClienteInput = document.getElementById('nomeCliente');
+        const emailClienteInput = document.getElementById('emailCliente');
+
+        const formularioProduto = document.getElementById('formularioProduto');
+        const nomeProdutoInput = document.getElementById('nomeProduto');
+        const precoProdutoInput = document.getElementById('precoProduto');
+        const tipoProdutoSelect = document.getElementById('tipoProduto');
+        const pesoProdutoInput = document.getElementById('pesoProduto');
+        const tamanhoProdutoInput = document.getElementById('tamanhoProduto');
+        const labelPeso = document.getElementById('labelPeso');
+        const labelTamanho = document.getElementById('labelTamanho');
+        const containerPeso = document.getElementById('containerPeso');
+        const containerTamanho = document.getElementById('containerTamanho');
+
+        const criarPedidoButton = document.getElementById('criarPedido');
+
+        const infoClienteP = document.getElementById('infoCliente');
+        const listaProdutosUl = document.getElementById('listaProdutos');
+        const totalPedidoP = document.getElementById('totalPedido');
+
+        let cliente;
+        let produtos = [];
+
+        formularioCliente.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const nome = nomeClienteInput.value.trim();
+            const email = emailClienteInput.value.trim();
+
+            if (nome !== '' && email !== '') {
+                cliente = new Cliente(nome, email);
+                infoClienteP.textContent = `Cliente: ${cliente.nome} (${cliente.email})`;
+                formularioCliente.reset();
+            } else {
+                alert('Por favor, preencha todos os campos.');
+            }
+        });
+
+        tipoProdutoSelect.addEventListener('change', function() {
+            const tipo = tipoProdutoSelect.value;
+
+            if (tipo === 'fisico') {
+                containerPeso.style.display = 'block';
+                containerTamanho.style.display = 'none';
+            } else if (tipo === 'digital') {
+                containerPeso.style.display = 'none';
+                containerTamanho.style.display = 'block';
+            } else {
+                containerPeso.style.display = 'none';
+                containerTamanho.style.display = 'none';
+            }
+        });
+
+        formularioProduto.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const nome = nomeProdutoInput.value.trim();
+            const preco = parseFloat(precoProdutoInput.value);
+            const tipo = tipoProdutoSelect.value;
+
+            if (nome !== '' && preco > 0 && tipo !== '') {
+                let produto;
+
+                if (tipo === 'fisico') {
+                    const peso = parseFloat(pesoProdutoInput.value);
+                    produto = new ProdutoFisico(nome, preco, peso);
+                } else if (tipo === 'digital') {
+                    const tamanho = parseFloat(tamanhoProdutoInput.value);
+                    produto = new ProdutoDigital(nome, preco, tamanho);
+                }
+
+                produtos.push(produto);
+                listaProdutosUl.innerHTML += `<li>${produto.nome} - R$ ${produto.getPreco().toFixed(2)}</li>`;
+                formularioProduto.reset();
+
+                containerPeso.style.display = 'none';
+                containerTamanho.style.display = 'none';
+            } else {
+                alert('Por favor, preencha todos os campos corretamente.');
+            }
+        });
+
+        criarPedidoButton.addEventListener('click', function() {
+            if (cliente && produtos.length > 0) {
+                const pedido = new Pedido(cliente);
+                produtos.forEach((produto) => {
+                    pedido.adicionarProduto(produto);
+                });
+
+                const totalPedido = pedido.calcularTotal();
+                totalPedidoP.textContent = `Total do Pedido: R$ ${totalPedido.toFixed(2)}`;
+            } else {
+                alert('Por favor, cadastre cliente e pelo menos um produto antes de criar o pedido.');
+            }
+        });
+    </script>
+</html>
+
+
